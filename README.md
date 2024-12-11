@@ -1,4 +1,4 @@
-# Wavegram: Music-Focused Social Media Platform
+# Wavegram: Full Stack Social Media Platform
 
 Wavegram is a social media application that fosters collaboration and community building. 
 This project is built with React.js, TypeScript, Appwrite, and Tailwind CSS.
