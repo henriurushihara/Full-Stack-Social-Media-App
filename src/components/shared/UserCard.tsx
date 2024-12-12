@@ -1,6 +1,5 @@
 import { Models } from "appwrite";
-import { Link, useNavigate } from "react-router-dom";
-
+import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { useUserContext } from "@/context/AuthContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,13 +17,13 @@ const UserCard = ({ user }: UserCardProps) => {
   const followMutation = useMutation({
     mutationFn: followUser,
     onSuccess: () => {
-      // Invalidate current user's following and target user's followers
-      queryClient.invalidateQueries(['user', currentUser.id]);
-      queryClient.invalidateQueries(['user', user.$id]);
+      // Ensure the query keys are correctly typed for React Query
+      queryClient.invalidateQueries({ queryKey: ["user", currentUser.id] }); // Specify query keys as an array
+      queryClient.invalidateQueries({ queryKey: ["user", user.$id] });
     },
     onError: (error) => {
       console.error("Error following user:", error);
-    }
+    },
   });
 
   const handleNavigate = () => {
@@ -34,13 +33,16 @@ const UserCard = ({ user }: UserCardProps) => {
   const handleFollow = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent navigating to profile on follow button click
     followMutation.mutate({
-      followerId: currentUser.id,
-      followingId: user.$id
+      userId: currentUser?.id || "", // Use `userId` for follow mutation
+      targetUserId: user.$id, // Use `targetUserId` for follow mutation
     });
   };
 
   return (
-    <div onClick={handleNavigate} className="user-card cursor-pointer p-4 bg-dark-2 rounded-lg shadow hover:bg-dark-3 transition-all">
+    <div
+      onClick={handleNavigate}
+      className="user-card cursor-pointer p-4 bg-dark-2 rounded-lg shadow hover:bg-dark-3 transition-all"
+    >
       <img
         src={user.imageUrl || "/assets/icons/profile-placeholder.svg"}
         alt={user.name}
@@ -49,8 +51,11 @@ const UserCard = ({ user }: UserCardProps) => {
       <p className="text-primary font-bold">{user.name}</p>
       <p className="text-light-3">@{user.username}</p>
 
-      {currentUser.id !== user.$id && (
-        <Button onClick={handleFollow} className="mt-2 bg-primary-500 text-white">
+      {currentUser?.id !== user.$id && (
+        <Button
+          onClick={handleFollow}
+          className="mt-2 bg-primary-500 text-white"
+        >
           Follow
         </Button>
       )}
