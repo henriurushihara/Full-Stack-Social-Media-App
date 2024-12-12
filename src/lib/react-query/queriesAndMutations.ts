@@ -229,12 +229,11 @@ export const useGetMultipleUsersById = (userIds) => {
   }
 
 // Define a type for the follower document
-export interface FollowerDocument {
-    $id: string;
-    imageUrl?: string;
-    name: string;
-    username: string;
-}
+export interface FollowerDocument extends Models.Document {
+    followerId: string;
+    followingId: string;
+    // Add other custom fields here
+  }
 
   export interface UserDocument extends Models.Document {
     name: string;
