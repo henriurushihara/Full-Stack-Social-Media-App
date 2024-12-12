@@ -31,7 +31,7 @@ const StatBlock = ({ value, label }: StatBlockProps) => (
 );
 
 const Profile = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const { user } = useUserContext();
   const { pathname } = useLocation();
 
@@ -46,10 +46,10 @@ const Profile = () => {
           ...currentUser,
           following: currentUser.following ? currentUser.following + 1 : 1,
         };
-        queryClient.setQueryData(["user", user.id], updatedUser);
+        queryClient.setQueryData(["user", user?.id], updatedUser);
       }
-      queryClient.invalidateQueries(["user", id]);
-      queryClient.invalidateQueries(["user", user.id]);
+      queryClient.invalidateQueries({ queryKey: ["user", id] });
+      queryClient.invalidateQueries({ queryKey: ["user", user?.id] });
     },
     onError: (error) => {
       console.error("Error following user:", error);
@@ -57,7 +57,7 @@ const Profile = () => {
   });
 
   const handleFollow = () => {
-    if (currentUser) {
+    if (currentUser && user?.id) {
       followMutation.mutate({ userId: user.id, targetUserId: id || "" });
     }
   };
@@ -74,7 +74,7 @@ const Profile = () => {
         <div className="flex xl:flex-row flex-col max-xl:items-center gap-9">
           {/* Profile Picture */}
           <img
-            src={currentUser.imageUrl || "/assets/icons/profile-placeholder.svg"}
+            src={currentUser?.imageUrl || "/assets/icons/profile-placeholder.svg"}
             alt="profile"
             className="w-28 h-28 lg:h-36 lg:w-36 rounded-full"
           />
@@ -84,15 +84,15 @@ const Profile = () => {
             <div className="flex items-center justify-between w-full">
               <div className="flex flex-col xl:mt-4">
                 <h1 className="text-center xl:text-left h3-bold md:h1-semibold">
-                  {currentUser.name}
+                  {currentUser?.name}
                 </h1>
                 <p className="small-regular md:body-medium text-light-3 text-center xl:text-left">
-                  @{currentUser.username}
+                  @{currentUser?.username}
                 </p>
               </div>
 
               {/* Follow Button */}
-              <div className={`${user.id === id ? "hidden" : ""} xl:ml-16 mt-4`}>
+              <div className={`${user?.id === id ? "hidden" : ""} xl:ml-16 mt-4`}>
                 <Button type="button" onClick={handleFollow} className="shad-button_primary px-10">
                   Follow
                 </Button>
@@ -101,12 +101,12 @@ const Profile = () => {
 
             {/* Statistics Bar */}
             <div className="flex gap-8 items-center justify-center sm:mt-8 xl:justify-start mt-4 xl:mt-6">
-              <StatBlock value={currentUser.posts?.length || 0} label="Posts" />
+              <StatBlock value={currentUser?.posts?.length || 0} label="Posts" />
               <Link to={`/profile/${id}/followers`} className="text-primary-500">
-                <StatBlock value={currentUser.followers || 0} label="Followers" />
+                <StatBlock value={currentUser?.followers || 0} label="Followers" />
               </Link>
               <Link to={`/profile/${id}/following`} className="text-primary-500">
-                <StatBlock value={currentUser.following || 0} label="Following" />
+                <StatBlock value={currentUser?.following || 0} label="Following" />
               </Link>
             </div>
           </div>
@@ -114,12 +114,12 @@ const Profile = () => {
 
         {/* Bio */}
         <p className="small-medium md:base-medium text-center xl:text-left mt-7 max-w-screen-sm">
-          {currentUser.bio}
+          {currentUser?.bio}
         </p>
 
         {/* Edit Profile Button */}
         <div className="flex justify-center gap-4 mt-8">
-          {user.id === currentUser.$id && (
+          {user?.id === currentUser?.$id && (
             <Link
               to={`/update-profile/${currentUser.$id}`}
               className="h-12 bg-dark-4 px-5 text-light-1 flex-center gap-2 rounded-lg"
@@ -139,7 +139,7 @@ const Profile = () => {
       </div>
 
       {/* Tabs for Posts and Liked Posts */}
-      {currentUser.$id === user.id && (
+      {currentUser?.$id === user?.id && (
         <div className="flex max-w-5xl w-full mt-8">
           <Link
             to={`/profile/${id}`}
@@ -171,18 +171,18 @@ const Profile = () => {
       <Routes>
         <Route
           index
-          element={<GridPostList posts={currentUser.posts} showUser={false} />}
+          element={<GridPostList posts={currentUser?.posts || []} showUser={false} />}
         />
-        {currentUser.$id === user.id && (
+        {currentUser?.$id === user?.id && (
           <Route path="/liked-posts" element={<LikedPosts />} />
         )}
         <Route
           path="/followers"
-          element={<Followers userId={currentUser.$id} />}
+          element={<Followers userId={currentUser?.$id} />}
         />
         <Route
           path="/following"
-          element={<Following userId={currentUser.$id} />}
+          element={<Following userId={currentUser?.$id} />}
         />
       </Routes>
       <Outlet />

@@ -295,38 +295,41 @@ export async function updatePost(post: IUpdatePost) {
 
   try {
     let image = {
-      imageUrl: post.imageUrl,
+      imageUrl: new URL(post.imageUrl), // Ensure `imageUrl` is a URL object
       imageId: post.imageId
-    }
+    };
 
-    if(hasFileToUpdate) {
-        // Upload file to appwrite storage
+    if (hasFileToUpdate) {
+      // Upload file to Appwrite storage
       const uploadedFile = await uploadFile(post.file[0]);
 
       if (!uploadedFile) throw Error;
 
-      // Get file url
+      // Get file URL
       const fileUrl = getFilePreview(uploadedFile.$id);
       if (!fileUrl) {
         await deleteFile(uploadedFile.$id);
         throw Error;
       }
 
-      image = { ...image, imageUrl: fileUrl, 
-              imageId: uploadedFile.$id }
+      image = { 
+        ...image, 
+        imageUrl: new URL(fileUrl), // Convert to URL object
+        imageId: uploadedFile.$id 
+      };
     }
-    
+
     // Convert tags into array
     const tags = post.tags?.replace(/ /g, "").split(",") || [];
 
-    // Create post
+    // Update post
     const updatedPost = await databases.updateDocument(
       appwriteConfig.databaseId,
       appwriteConfig.postCollectionId,
       post.postId,
       {
         caption: post.caption,
-        imageUrl: image.imageUrl,
+        imageUrl: image.imageUrl.toString(), // Convert URL back to string for database
         imageId: image.imageId,
         location: post.location,
         tags: tags,
@@ -361,29 +364,30 @@ export async function deletePost(postId: string, imageId: string) {
   }
 }
 
-export async function getInfinitePosts(
-  { pageParam }: { pageParam: number }) {
-    const queries: any[] = [Query.orderDesc('$updatedAt'), Query.limit (10)]
+export async function getInfinitePosts({ pageParam }: { pageParam?: string }) {
+  const queries: any[] = [Query.orderDesc('$updatedAt'), Query.limit(10)];
 
-    if(pageParam) {
-      queries.push(Query.cursorAfter(pageParam.toString()))
-    }
-
-    try {
-      const posts = await databases.listDocuments(
-        appwriteConfig.databaseId,
-        appwriteConfig.postCollectionId,
-        queries
-      )
-
-      if(!posts) throw Error;
-
-      return posts;
-
-    } catch (error) {
-      console.log(error);
-    }
+  if (pageParam) {
+    queries.push(Query.cursorAfter(pageParam));
   }
+
+  try {
+    const posts = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.postCollectionId,
+      queries
+    );
+
+    if (!posts) throw new Error("No posts found");
+
+    return posts;
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    throw error; // Re-throw to handle errors in React Query
+  }
+}
+
+
 
 export async function searchPosts(searchTerm: string) {
     

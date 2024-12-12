@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { getFollowers } from "@/lib/react-query/queriesAndMutations";
-
-// Define a type for the follower document
-interface FollowerDocument {
-    $id: string;
-    imageUrl?: string;
-    name: string;
-    username: string;
-}
+import { FollowerDocument } from "@/lib/react-query/queriesAndMutations";
 
 interface FollowersListProps {
     userId: string;

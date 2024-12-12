@@ -154,19 +154,21 @@ export const useDeletePost = () => {
 }
 
 export const useGetPosts = () => {
-    return useInfiniteQuery({
-        queryKey: [QUERY_KEYS.GET_INFINITE_POSTS],
-        queryFn: getInfinitePosts,
-        getNextPageParam: (lastPage) => {
-            if(lastPage && lastPage.documents.length === 0) return null;
-
-            const lastId 
-            = lastPage.documents[lastPage?.documents.length - 1].$id;
-
-            return lastId;
-        }
-    })
-}
+    return useInfiniteQuery<Models.DocumentList<Models.Document>, Error>({
+      queryKey: [QUERY_KEYS.GET_INFINITE_POSTS],
+      queryFn: ({ pageParam }) =>
+        getInfinitePosts({ pageParam: pageParam as string | undefined }), // Cast pageParam
+      getNextPageParam: (lastPage) => {
+        if (!lastPage || !lastPage.documents.length) return null;
+  
+        // Safely get the last document's ID
+        const lastId = lastPage.documents?.[lastPage.documents.length - 1]?.$id;
+        return lastId || null; // Ensure null is returned if lastId is undefined
+      },
+      initialPageParam: null, // Initialize `pageParam`
+    });
+  };
+  
 
 export const useSearchPosts = (searchTerm: string) => {
     return useQuery({
@@ -242,47 +244,45 @@ export interface FollowerDocument extends Models.Document {
     // Add any other user-specific fields here
   }
 
-export const getFollowers = async (userId: string): Promise<FollowerDocument[]> => {
-    const response = await databases.listDocuments(
-        appwriteConfig.databaseId,
-        appwriteConfig.followersCollectionId,
-      [Query.equal("followingId", userId)]
-    );
-  
-    const followers = await Promise.all(
-      response.documents.map(async (doc) => {
-        const userData = await databases.getDocument<UserDocument>(
-            appwriteConfig.databaseId,
-            appwriteConfig.userCollectionId,
-          doc.followerId
-        );
-        return { ...doc, ...userData }; // Merge follower document with user profile data
-      })
-    );
-  
-    return followers;
-  };
-
-export const getFollowing = async (userId: string): Promise<FollowerDocument[]> => {
+  export const getFollowers = async (userId: string): Promise<FollowerDocument[]> => {
     const response = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.followersCollectionId,
-      [Query.equal("followerId", userId)] // Here we check where 'followerId' matches 'userId', meaning Nobunaga is the follower
+      [Query.equal("followingId", userId)]
     );
   
-    const following = await Promise.all(
-      response.documents.map(async (doc) => {
-        const userData = await databases.getDocument<UserDocument>(
-          appwriteConfig.databaseId,
-          appwriteConfig.userCollectionId,
-          doc.followingId // Get details of the users Nobunaga is following
-        );
-        return { ...doc, ...userData }; // Merge following document with user profile data
-      })
+    const followers: FollowerDocument[] = response.documents.map((doc) => ({
+      ...doc, // Includes fields from the follower document (like $id, $collectionId, etc.)
+      followerId: doc.followerId, // Explicitly include followerId
+      followingId: doc.followingId, // Explicitly include followingId
+      name: doc.name, // Ensure any additional fields are included as necessary
+      username: doc.username,
+      imageUrl: doc.imageUrl,
+    }));
+  
+    return followers;
+  };
+  
+
+  export const getFollowing = async (userId: string): Promise<FollowerDocument[]> => {
+    const response = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.followersCollectionId,
+      [Query.equal("followerId", userId)]
     );
+  
+    const following: FollowerDocument[] = response.documents.map((doc) => ({
+      ...doc, // Includes fields from the following document (like $id, $collectionId, etc.)
+      followerId: doc.followerId, // Explicitly include followerId
+      followingId: doc.followingId, // Explicitly include followingId
+      name: doc.name, // Ensure any additional fields are included as necessary
+      username: doc.username,
+      imageUrl: doc.imageUrl,
+    }));
   
     return following;
   };
+  
 
   export const followUser = async ({ userId, targetUserId }: { userId: string; targetUserId: string }) => {
     // Create a follower relationship in the followers collection
