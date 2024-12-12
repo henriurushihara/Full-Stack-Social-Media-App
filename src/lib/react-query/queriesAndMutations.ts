@@ -8,7 +8,7 @@ import { updatePost, createPost, createUserAccount, deleteSavedPost, getCurrentU
 import { INewPost, INewUser, IUpdatePost, IUpdateUser } from '@/types'
 import { QUERY_KEYS } from './queryKeys'
 import { appwriteConfig, databases } from '../appwrite/config'
-import { Models, ID, Query } from 'appwrite'
+import { Models, Query } from 'appwrite'
 
 export const useCreateUserAccount = () => {
     return useMutation({
@@ -76,8 +76,7 @@ export const useSavePost = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ postId, userId }: { postId: string; userId:
-        string }) => savePost(postId, userId),
+        mutationFn: ({ postId, userId }: { postId: string; userId: string[] }) => savePost(postId, userId),
         onSuccess: () => { 
             queryClient.invalidateQueries({
                 queryKey: [QUERY_KEYS.GET_RECENT_POSTS]
@@ -208,7 +207,7 @@ return useMutation({
 });
 };
 
-export const useGetMultipleUsersById = (userIds) => {
+export const useGetMultipleUsersById = (userIds: string[]) => {
     return useQuery({
       queryKey: ["multipleUsers", userIds],
       queryFn: () => getUsersByIds(userIds),
@@ -217,7 +216,7 @@ export const useGetMultipleUsersById = (userIds) => {
   };
   
   
-  export async function getUsersByIds(userIds) {
+  export async function getUsersByIds(userIds: string[]): Promise<Models.Document[]> {
     if (!userIds || userIds.length === 0) return [];
     
     const queries = userIds.map(id => Query.equal("$id", id));
