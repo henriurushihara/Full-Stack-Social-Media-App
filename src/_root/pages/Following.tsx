@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
 import { FollowerDocument, getFollowing } from "@/lib/react-query/queriesAndMutations";
 import UserCard from "@/components/shared/UserCard";
-import { useParams } from "react-router-dom";
 
-const Following = () => {
-  const { id } = useParams<{ id: string }>(); // TypeScript type added for route parameters
+interface FollowingProps {
+  userId: string;
+}
+
+const Following: React.FC<FollowingProps> = ({ userId }) => {
   const [following, setFollowing] = useState<FollowerDocument[]>([]);
 
   useEffect(() => {
     const fetchFollowing = async () => {
-      if (id) {
-        const data = await getFollowing(id); // Fetch following for the profile's user ID
+      if (userId) {
+        const data = await getFollowing(userId); // Fetch following for the profile's user ID
         if (data) setFollowing(data); // Safeguard against undefined or null responses
       }
     };
     fetchFollowing();
-  }, [id]);
+  }, [userId]);
 
   return (
     <div>
